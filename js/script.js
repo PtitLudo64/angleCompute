@@ -2,32 +2,14 @@ const canvas = document.querySelector('#canvasInfo #canvas1');
 const ctx = canvas.getContext('2d');
 const divInput = document.querySelector('#nbDiv');
 const info = document.querySelector('#canvasInfo #info');
-let segmentsArray = [];
-let segmentsLimits = [];
 
 ctx.fillStyle = '#fff';
 
 canvas.width = 1000;
-canvas.height = 720;
+canvas.height = 740;
 
-let centerX = canvas.width * 0.5;
-let centerY = canvas.height * 0.5;
-
-let dx, dy;
-let angle = 0;
-
-let mouse = {
-    x: canvas.width * 0.5,
-    y: canvas.height * 0.5
-};
-
-Number.prototype.between = function (lower, upper) {
-    return lower < this && this < upper;
-};
-
-divInput.addEventListener('change', () => {
-    divComputing(divInput.value);
-});
+const centerX = canvas.width * 0.5;
+const centerY = canvas.height * 0.5;
 
 class seg {
     constructor() {
@@ -37,12 +19,27 @@ class seg {
     }
 }
 
+let segmentsArray = [];     //Array of segments (start & end angle coords in 2PI circle and color)
+let segmentsLimits = [];    //Array of segments (start & end angle coords in PI half circle)
+let mouse = {};             //Mouse object for x and y coords
+let dx, dy, angle;
+
+//Add between function to Number Object
+Number.prototype.between = function (lower, upper) {
+    return lower < this && this < upper;
+};
+
+//Helpers functions
 const arePositives = (item1, item2) => {
     return (item1 >= 0 && item2 >= 0);
 }
 const areNegatives = (item1, item2) => {
     return (item1 <= 0 && item2 <= 0);
 }
+
+divInput.addEventListener('change', () => {
+    divComputing(divInput.value);
+});
 
 const segmentInfo = () => {
     segmentsLimits = [];
@@ -84,10 +81,8 @@ const segmentInfo = () => {
             }
             segmentsLimits.push(truc);
         }
-
     });
 };
-
 
 const divComputing = (nb) => {
     console.clear();
@@ -112,19 +107,17 @@ const divComputing = (nb) => {
             segmentsArray.push(segment);
         }
         segmentInfo();
-        // storeSegments();
     }
-
 };
 
 const drawFrames = (context) => {
     segmentsArray.forEach(seg => {
         let pointX = centerX + (Math.cos(seg.startPlot) * 350);
         let pointY = centerY + (Math.sin(seg.startPlot) * 350);
-        plotArc(ctx, pointX, pointY);
+        plotAdot(ctx, pointX, pointY);
         pointX = centerX + (Math.cos(seg.endPlot) * 350);
         pointY = centerY + (Math.sin(seg.endPlot) * 350);
-        plotArc(ctx, pointX, pointY);
+        plotAdot(ctx, pointX, pointY);
         drawFrameArc(context, centerX, centerY, seg.startPlot, seg.endPlot, seg.coul);
     })
 }
@@ -142,7 +135,6 @@ const checkSegment = (mouseAngle) => {
     if (segmentsLimits.length > 0) {
         let isIncluded = false;
         segmentsLimits.forEach(pieceOfPie => {
-            // pieceOfPie.start < pieceOfPie.end ? isIncluded = mouseAngle.between(pieceOfPie.start + 0.1, pieceOfPie.end - 0.1) : isIncluded = mouseAngle.between(pieceOfPie.end - 0.1, pieceOfPie.start + 0.1);
             isIncluded = mouseAngle.between(pieceOfPie.start, pieceOfPie.end);
             if (isIncluded)
                 console.log('PieceOfPie : ', pieceOfPie.id);
@@ -157,7 +149,7 @@ canvas.addEventListener('mousemove', (e) => {
     checkSegment(angle);
 });
 
-const plotArc = (context, cX, cY) => {
+const plotAdot = (context, cX, cY) => {
     context.fillStyle = '#fff';
     context.beginPath();
     context.arc(cX, cY, 2, 0, Math.PI * 2);
@@ -165,7 +157,7 @@ const plotArc = (context, cX, cY) => {
 }
 
 const drawCentrer = (context) => {
-    plotArc(context, centerX, centerY);
+    plotAdot(context, centerX, centerY);
 };
 
 const drawText = (context, text, x, y) => {
@@ -189,13 +181,8 @@ const drawAbscisse = (context) => {
 
 const drawMouseAngle = (context, angle) => {
     let startAngle, endAngle;
-    // if (angle  > 0) {
     startAngle = 0;
     endAngle = angle;
-    // } else {
-    //     startAngle = angle;
-    //     endAngle = 0;
-    // }
     context.strokeStyle = "#f80";
     context.beginPath();
     context.arc(centerX, centerY, 100, startAngle, endAngle);
@@ -236,24 +223,12 @@ function calculAngle(context) {
     drawAbscisse(context);
     drawMouseAngle(context, angle);
 
-    //  PtX = originX + (cos(angle) * radius)
     let pointX = centerX + (Math.cos(angle) * 350);
     let pointY = centerY + (Math.sin(angle) * 350);
 
     drawLineFromAngle(context, pointX, pointY);
 
-
 }
-
-// if (this.angle < -2.74 || this.angle > 2.74) this.frameY = 6;
-// else if (this.angle < -1.96) this.frameY = 7;
-// else if (this.angle < -1.17) this.frameY = 0;
-// else if (this.angle < -0.39) this.frameY = 1;
-// else if (this.angle < 0.39) this.frameY = 2;
-// else if (this.angle < 1.17) this.frameY = 3;
-// else if (this.angle < 1.96) this.frameY = 4;
-// else if (this.angle < 2.74) this.frameY = 5;
-
 
 function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -261,5 +236,5 @@ function animate() {
     drawFrames(ctx);
     window.requestAnimationFrame(animate);
 }
-// const coul = "hsl(" + Math.random() * 360 + ", 100%, 50%)";
+
 animate();
