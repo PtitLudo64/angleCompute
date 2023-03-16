@@ -21,7 +21,7 @@ let mouse = {
     y: canvas.height * 0.5
 };
 
-Number.prototype.between = function(lower, upper) {
+Number.prototype.between = function (lower, upper) {
     return lower < this && this < upper;
 };
 
@@ -37,31 +37,60 @@ class seg {
     }
 }
 
+const arePositives = (item1, item2) => {
+    return (item1 >= 0 && item2 >= 0);
+}
+const areNegatives = (item1, item2) => {
+    return (item1 <= 0 && item2 <= 0);
+}
+
 const segmentInfo = () => {
-    segmentsLimits=[];
+    segmentsLimits = [];
     info.innerHTML = '<h2>Segments</h2>';
     segmentsArray.forEach(segment => {
+        let truc;
         // Segment Start 
         const pointStartX = Math.cos(segment.startPlot);
         const pointStartY = Math.sin(segment.startPlot);
-        const startAngle = Math.atan2(pointStartY, pointStartX);
+        let startAngle = Math.trunc(Math.atan2(pointStartY, pointStartX) * 100) / 100;
         // Segment End
         const pointEndX = Math.cos(segment.endPlot);
         const pointEndY = Math.sin(segment.endPlot);
-        const endAngle = Math.atan2(pointEndY, pointEndX);
+        let endAngle = Math.trunc(Math.atan2(pointEndY, pointEndX) * 100) / 100;
+        if (startAngle >= 0 && endAngle == -3.14)
+            endAngle *= -1;
         // Info Box
-        info.innerHTML += '<div class="infoLine"><div class="pastille" style="background-color: '+ segment.coul +'"></div><p>start at ' + Math.trunc(startAngle * 100) / 100 + ", end at "+ Math.trunc(endAngle * 100) / 100 +" rad</p></div>";
+        info.innerHTML += '<div class="infoLine"><div class="pastille" style="background-color: ' + segment.coul + '"></div><p>start at ' + Math.trunc(startAngle * 100) / 100 + ", end at " + Math.trunc(endAngle * 100) / 100 + " rad</p></div>";
         // store Segment in segmentsLimits array
-        let truc = {
-            start: Math.trunc(startAngle * 100) / 100,
-            end: Math.trunc(endAngle * 100) / 100
+        if (!arePositives(startAngle, endAngle) && !areNegatives(startAngle, endAngle)) {
+            // console.log(segmentsArray.indexOf(segment), 'Segment PAS dans la même tranche', startAngle, endAngle);
+            truc = {
+                id: segmentsArray.indexOf(segment),
+                start: startAngle,
+                end: startAngle > 0 ? 3.14 : 0
+            }
+            segmentsLimits.push(truc);
+            truc = {
+                id: segmentsArray.indexOf(segment),
+                start: endAngle > 0 ? 0 : -3.14,
+                end: endAngle
+            }
+            segmentsLimits.push(truc);
+        } else {
+            truc = {
+                id: segmentsArray.indexOf(segment),
+                start: startAngle,
+                end: endAngle
+            }
+            segmentsLimits.push(truc);
         }
-        segmentsLimits.push(truc);
+
     });
 };
 
 
 const divComputing = (nb) => {
+    console.clear();
     if (nb != segmentsArray.length) {
         segmentsArray = [];
 
@@ -69,23 +98,23 @@ const divComputing = (nb) => {
         const angleDeg = 360 / nb;
         const angleRad = Math.PI * 2 / nb;
         segment = {
-            startPlot : Math.PI * 0.5 - (angleRad * 0.5),
-            endPlot : Math.PI * 0.5 + (angleRad * 0.5),
-            coul : "hsl(" + nb * angleDeg  + ", 100%, 50%)"
+            startPlot: Math.PI * 0.5 - (angleRad * 0.5),
+            endPlot: Math.PI * 0.5 + (angleRad * 0.5),
+            coul: "hsl(" + nb * angleDeg + ", 100%, 50%)"
         };
         segmentsArray.push(segment);
-        for (let i=0; i<nb-1; i++) {
-            const start = segmentsArray[segmentsArray.length-1].endPlot + 0.0001;
+        for (let i = 0; i < nb - 1; i++) {
+            const start = segmentsArray[segmentsArray.length - 1].endPlot + 0.0001;
             let segment = new seg;
             segment.startPlot = start;
             segment.endPlot = segment.startPlot + angleRad;
-            segment.coul = "hsl(" + (i+1) * angleDeg + ", 100%, 50%)";
+            segment.coul = "hsl(" + (i + 1) * angleDeg + ", 100%, 50%)";
             segmentsArray.push(segment);
         }
         segmentInfo();
         // storeSegments();
     }
-    
+
 };
 
 const drawFrames = (context) => {
@@ -113,11 +142,12 @@ const checkSegment = (mouseAngle) => {
     if (segmentsLimits.length > 0) {
         let isIncluded = false;
         segmentsLimits.forEach(pieceOfPie => {
-            pieceOfPie.start < pieceOfPie.end ? isIncluded = mouseAngle.between(pieceOfPie.start+0.1, pieceOfPie.end-0.1) : isIncluded = mouseAngle.between(pieceOfPie.end-0.1, pieceOfPie.start+0.1);
-            if (isIncluded) 
-                console.log('PieceOfPie : ', segmentsLimits.indexOf(pieceOfPie));
+            // pieceOfPie.start < pieceOfPie.end ? isIncluded = mouseAngle.between(pieceOfPie.start + 0.1, pieceOfPie.end - 0.1) : isIncluded = mouseAngle.between(pieceOfPie.end - 0.1, pieceOfPie.start + 0.1);
+            isIncluded = mouseAngle.between(pieceOfPie.start, pieceOfPie.end);
+            if (isIncluded)
+                console.log('PieceOfPie : ', pieceOfPie.id);
         });
-        
+
     }
 }
 
@@ -128,7 +158,7 @@ canvas.addEventListener('mousemove', (e) => {
 });
 
 const plotArc = (context, cX, cY) => {
-    context.fillStyle='#fff';
+    context.fillStyle = '#fff';
     context.beginPath();
     context.arc(cX, cY, 2, 0, Math.PI * 2);
     context.fill();
@@ -160,8 +190,8 @@ const drawAbscisse = (context) => {
 const drawMouseAngle = (context, angle) => {
     let startAngle, endAngle;
     // if (angle  > 0) {
-        startAngle = 0;
-        endAngle = angle;
+    startAngle = 0;
+    endAngle = angle;
     // } else {
     //     startAngle = angle;
     //     endAngle = 0;
@@ -182,9 +212,9 @@ const drawBlueLine = (context, ptX, ptY) => {
 
 const drawLineFromAngle = (context, ptX, ptY) => {
     drawText(context, 'Point X : ', 5, 90);
-    drawText(context, Math.floor(ptX * 100) /100, 100, 90);
+    drawText(context, Math.floor(ptX * 100) / 100, 100, 90);
     drawText(context, 'Point Y : ', 5, 120);
-    drawText(context, Math.floor(ptY * 100) /100, 100, 120);
+    drawText(context, Math.floor(ptY * 100) / 100, 100, 120);
 
     drawBlueLine(context, ptX, ptY);
 }
@@ -200,7 +230,7 @@ function calculAngle(context) {
     drawText(context, 'DY : ', 150, 30);
     drawText(context, dy, 210, 30);
     drawText(context, 'Angle : ', 5, 60);
-    drawText(context, Math.round(angle *100)/100 + ' rad, ' + (Math.round((angle * 180 / Math.PI)*100)) / 100 + '°', 80, 60);
+    drawText(context, Math.round(angle * 100) / 100 + ' rad, ' + (Math.round((angle * 180 / Math.PI) * 100)) / 100 + '°', 80, 60);
 
     drawCentrer(context);
     drawAbscisse(context);
